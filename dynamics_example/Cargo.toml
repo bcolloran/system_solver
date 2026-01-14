@@ -1,0 +1,22 @@
+[package]
+name = "player_dynamics"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["lib"]
+
+
+[dependencies]
+struct_to_array = "0.1.1"
+
+nalgebra = { workspace = true }
+dyn-clone = { workspace = true }
+as_gd_res = { workspace = true }
+godot = { workspace = true }
+ad_trait = { workspace = true }
+
+field_names = "0.2.0"
+
+[dev-dependencies]
+test-case = { workspace = true }

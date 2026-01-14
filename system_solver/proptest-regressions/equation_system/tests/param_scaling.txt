@@ -1,0 +1,13 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 662280f0f06592827eb86be9ead651b59bd9de26da690dcc56844da7661c2607 # shrinks to x = 904.9493187928886, prior = -170.5842291501288
+cc 6521305cd918a2227ae395dcf8d99c838ce3fa4f009d8ba18b73506a13ea7859 # shrinks to x1 = -45.43323277517376, delta = 0.01
+cc 8bfbdc3b2d779052111e6f8ae9e736c727c41857ae9f65146948a62eaf2a19a9 # shrinks to x = 5547.92528683848, prior = 0.1, scale = 1.0, lb = 0.0
+cc 97e9d4bb86097741f8c426b0af32cbf099bea595701724a72a36d866cc7a6ca0 # shrinks to x = -18.039215729617037
+cc 61b68cc20e5fa21d8800dd8cae92a709d165d8191de7b1af452cbf385f010471 # shrinks to x = -6.99033993170702, prior = 0.1, scale = 1.0, lb = 0.0
+cc 343abb6d1deb4069c2a8481ec1f5f5ddd2143004a95fc2cb5637b5c521c3ce7c # shrinks to x = -50.0, prior = 316.97978416906346, scale = 5.0, lb = 0.1
+cc f7d54486071e50dd33a63f73bce7bb43711cb0b4763525e68f907f4d3f8fea3a # shrinks to x = 96.9989470934764, prior = -15.77391362105182

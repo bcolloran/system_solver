@@ -1,0 +1,59 @@
+[workspace]
+resolver = "2"
+members = [
+  "game",
+  "framework",
+  "nav_lib",
+  "enum_tree",
+  "enum_tree_derive",
+  "dispatch_tree",
+  "dispatch_tree_derive",
+  "param_solver",
+  "player_dynamics",
+  "struct_to_array/struct_to_array",
+  "struct_to_array/struct_to_array_derive",
+]
+
+[profile.release]
+codegen-units = 1
+
+[profile.profiling]
+inherits = "release"
+debug = true
+
+[profile.dev]
+debug = true
+
+# [profile.dev.package."framework"]
+# opt-level = 3
+
+[profile.dev.package."nav_lib"]
+opt-level = 3
+
+[profile.dev.package."*"]
+opt-level = 3
+
+# Then explicitly set the "game" crate back to low optimization 
+# (so it compiles much faster when you change it).
+[profile.dev.package."game"]
+opt-level = 0
+
+# Then explicitly set the "framework" crate back to low optimization 
+# (so it compiles much faster when you change it).
+[profile.dev.package."framework"]
+opt-level = 0
+
+
+[workspace.dependencies]
+
+
+dyn-clone = "1.0.17"
+derive_more = { version = "2.0.1", features = [
+  "from",
+  "try_into",
+  "display",
+  "deref",
+] }
+
+
+# Dev dependencies

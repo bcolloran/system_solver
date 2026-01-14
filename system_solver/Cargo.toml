@@ -1,0 +1,33 @@
+[package]
+name = "system_solver"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["lib"]
+
+
+[dependencies]
+struct_to_array = "0.1.1"
+nalgebra_block_triangularization = "0.1.0"
+
+nalgebra = "0.34"
+ad_trait = { git = "https://github.com/bcolloran/ad_trait.git", branch = "main" }
+
+anyhow = "1.0"
+
+argmin = "0.11.0"
+argmin-math = { version = "0.5.1", features = ["nalgebra_v0_34"] }
+
+tynm = "0.2.0"
+
+rand = "0.9"
+rand_core = "0.9"
+rand_distr = "0.5.1"
+
+thiserror = "2.0.17"
+
+[dev-dependencies]
+test-case = "3.3.1"
+proptest = "1.9.0"
+pretty_assertions = "1.4.1"

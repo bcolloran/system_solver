@@ -1,0 +1,58 @@
+# Godot 4+ specific ignores
+.godot/
+
+# Godot-specific ignores
+.import/
+export.cfg
+export_presets.cfg
+
+# Imported translations (automatically generated from CSV files)
+*.translation
+
+# Mono-specific ignores
+.mono/
+data_*/
+mono_crash.*.json
+
+# My ignore pathss
+/godot_bin_dev
+/game_log
+/build/
+/.logs/
+/downloaded_logs/
+.env/
+/api_docs_for_llm
+
+*.tmp
+.cache/
+*.cache
+*/.cache/
+
+/target
+
+*.png~
+*.kra~
+*.autosave.kra
+
+# ignore conflicted
+*(conflicted).*
+*\[conflicted *\].*
+*\[conflicted*
+
+godot/assets/build_timestamp.txt
+
+steam/output/
+
+profile.json
+
+appimagetool
+appimagetool-x86_64.AppImage
+
+rustc-ice-*.txt
+
+supabase_service_role_key.txt
+supabase_s3_access_keys.env
+
+
+
+godot/addons/resources_spreadsheet_view/saved_state.json
