@@ -1,59 +1,33 @@
-[workspace]
-resolver = "2"
-members = [
-  "game",
-  "framework",
-  "nav_lib",
-  "enum_tree",
-  "enum_tree_derive",
-  "dispatch_tree",
-  "dispatch_tree_derive",
-  "param_solver",
-  "player_dynamics",
-  "struct_to_array/struct_to_array",
-  "struct_to_array/struct_to_array_derive",
-]
+[package]
+name = "system_solver"
+version = "0.1.0"
+edition = "2024"
 
-[profile.release]
-codegen-units = 1
-
-[profile.profiling]
-inherits = "release"
-debug = true
-
-[profile.dev]
-debug = true
-
-# [profile.dev.package."framework"]
-# opt-level = 3
-
-[profile.dev.package."nav_lib"]
-opt-level = 3
-
-[profile.dev.package."*"]
-opt-level = 3
-
-# Then explicitly set the "game" crate back to low optimization 
-# (so it compiles much faster when you change it).
-[profile.dev.package."game"]
-opt-level = 0
-
-# Then explicitly set the "framework" crate back to low optimization 
-# (so it compiles much faster when you change it).
-[profile.dev.package."framework"]
-opt-level = 0
+[lib]
+crate-type = ["lib"]
 
 
-[workspace.dependencies]
+[dependencies]
+struct_to_array = "0.1.1"
+nalgebra_block_triangularization = "0.1.0"
 
+nalgebra = "0.34"
+ad_trait = { git = "https://github.com/bcolloran/ad_trait.git", branch = "main" }
 
-dyn-clone = "1.0.17"
-derive_more = { version = "2.0.1", features = [
-  "from",
-  "try_into",
-  "display",
-  "deref",
-] }
+anyhow = "1.0"
 
+argmin = "0.11.0"
+argmin-math = { version = "0.5.1", features = ["nalgebra_v0_34"] }
 
-# Dev dependencies
+tynm = "0.2.0"
+
+rand = "0.9"
+rand_core = "0.9"
+rand_distr = "0.5.1"
+
+thiserror = "2.0.17"
+
+[dev-dependencies]
+test-case = "3.3.1"
+proptest = "1.9.0"
+pretty_assertions = "1.4.1"
