@@ -1,5 +1,8 @@
 use crate::prelude::*;
-use system_solver::prelude::{ad_trait::AD, nalgebra::{UnitVector2, Vector2}};
+use system_solver::prelude::{
+    ad_trait::AD,
+    nalgebra::{UnitVector2, Vector2},
+};
 
 /// Estimates the normal force from gravity for a surface contact.
 ///

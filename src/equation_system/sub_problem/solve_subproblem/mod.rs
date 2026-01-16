@@ -36,7 +36,10 @@ where
             );
     }
 
-    fn print_post_optimization_summary<S, Gr, J>(&self, opt_res: &OptRes<S, G64, U64, Gadfn, Uadfn, R, A, N, Gr, J>) {
+    fn print_post_optimization_summary<S, Gr, J>(
+        &self,
+        opt_res: &OptRes<S, G64, U64, Gadfn, Uadfn, R, A, N, Gr, J>,
+    ) {
         println!(
             "------- post optimization (block {})-------",
             self.block.block_idx

@@ -12,7 +12,8 @@ use rand::{distr, prelude::*};
 /// Note that in the case of residual aggregation to scalar, the Operator returns a 1×1 matrix because aggregation to scalar happens *within* the FunctionEngine call (as it must in order to compute derivatives correctly).
 ///
 /// Thus, we can just use the Operator implementation to get the scalar cost value as a 1×1 matrix, and then extract the scalar from that matrix in the CostFunction implementation.
-impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> CostFunction for SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
+impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> CostFunction
+    for SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
 where
     G64: GivenParamsFor<f64, N>,
     U64: UnknownParamsFor<f64, N>,
@@ -30,7 +31,8 @@ where
     }
 }
 
-impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> Operator for SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
+impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> Operator
+    for SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
 where
     G64: GivenParamsFor<f64, N>,
     U64: UnknownParamsFor<f64, N>,
@@ -62,7 +64,8 @@ where
     }
 }
 
-impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> Gradient for SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
+impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> Gradient
+    for SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
 where
     G64: GivenParamsFor<f64, N>,
     U64: UnknownParamsFor<f64, N>,
@@ -100,7 +103,8 @@ where
     }
 }
 
-impl<G64, U64, Gadfn, Uadfn, R, const N: usize> Jacobian for SubProblem<G64, U64, Gadfn, Uadfn, R, ResidNoOpGaussNewton, N>
+impl<G64, U64, Gadfn, Uadfn, R, const N: usize> Jacobian
+    for SubProblem<G64, U64, Gadfn, Uadfn, R, ResidNoOpGaussNewton, N>
 where
     G64: GivenParamsFor<f64, N>,
     U64: UnknownParamsFor<f64, N>,
@@ -129,7 +133,8 @@ where
     }
 }
 
-impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> Anneal for SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
+impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> Anneal
+    for SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
 where
     G64: GivenParamsFor<f64, N>,
     U64: UnknownParamsFor<f64, N>,

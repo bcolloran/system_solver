@@ -76,20 +76,20 @@ where
         raw_residual_fns: ResidualFns<G64, U64, Gadfn, Uadfn>,
         unknown_field_names: &'static [&'static str],
     ) -> Result<EquationSystemBuilder<G64, U64, Gadfn, Uadfn, EqSysStateInit, N>, EqSysError> {
-        let num_eqs = raw_residual_fns.f64.len();
+        let num_eqs = raw_residual_fns.f64().len();
         let identity_loss_gen = ResidTransIdentity { n: num_eqs };
         let resid_pass_through = ResidNoOpGaussNewton::new_fullprob(num_eqs);
 
         let residuals_f64 = ObjectiveFunction::new(
             &givens_f64,
-            &raw_residual_fns.f64,
+            &raw_residual_fns.f64(),
             identity_loss_gen.clone(),
             resid_pass_through.clone(),
             None,
         );
         let residuals_adfn = ObjectiveFunction::new(
             &givens_adfn,
-            &raw_residual_fns.adfn_1,
+            &raw_residual_fns.adfn_1(),
             identity_loss_gen,
             resid_pass_through.clone(),
             None,
@@ -238,7 +238,7 @@ where
     pub fn print_permuted_function_names(&self) {
         println!("Permuted residual function names:");
         for &r in &self.state.block_structure.row_order {
-            let fn_name = self.raw_res_fns.fn_names[r];
+            let fn_name = self.raw_res_fns.fn_names()[r];
             println!("   {}", fn_name);
         }
     }
@@ -265,7 +265,7 @@ where
         for block in self.state.solution_plan.blocks.iter() {
             println!(" Block {}:", block.block_idx);
             for &eq_idx in &block.equation_idxs {
-                let fn_name = self.raw_res_fns.fn_names[eq_idx];
+                let fn_name = self.raw_res_fns.fn_names()[eq_idx];
                 let res_val = residuals[eq_idx];
                 println!("   {}: {:.6}", fn_name, res_val);
             }
@@ -279,7 +279,7 @@ where
         initial_unknowns: &U64,
     ) -> Result<U64, EqSysError> {
         let l2_loss_gen = ResidTransUnscaledL2 {
-            n: self.raw_res_fns.f64.len(),
+            n: self.raw_res_fns.f64().len(),
         };
 
         let subprob = SubProblem::new(
@@ -302,7 +302,7 @@ where
         initial_unknowns: &U64,
     ) -> Result<U64, EqSysError> {
         let l2_loss_gen = ResidTransUnscaledL2 {
-            n: self.raw_res_fns.f64.len(),
+            n: self.raw_res_fns.f64().len(),
         };
 
         let subprob = SubProblem::new(
@@ -330,7 +330,7 @@ where
         initial_unknowns: &U64,
     ) -> Result<U64, EqSysError> {
         let l2_loss_gen = ResidTransUnscaledL2 {
-            n: self.raw_res_fns.f64.len(),
+            n: self.raw_res_fns.f64().len(),
         };
 
         let subprob = SubProblem::new(
@@ -409,7 +409,7 @@ where
         // Do a final fine-tuning pass over the full problem
         println!("\n\n################## full-problem refinement ##################");
 
-        let full_prob_block = SolutionBlock::new_fullprob(self.raw_res_fns.f64.len());
+        let full_prob_block = SolutionBlock::new_fullprob(self.raw_res_fns.f64().len());
 
         current_unknowns = self.solve_sub_problem_lbfgs(&full_prob_block, &current_unknowns)?;
 

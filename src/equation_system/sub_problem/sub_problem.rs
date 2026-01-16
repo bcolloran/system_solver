@@ -75,7 +75,7 @@ where
 
         let loss_f64 = ObjectiveFunction::new(
             givens_f64,
-            &sub_prob_res_fns.f64,
+            &sub_prob_res_fns.f64(),
             residual_scaling.clone(),
             residual_agg_fn_gen.clone(),
             if use_scaling {
@@ -87,7 +87,7 @@ where
 
         let loss_adfn = ObjectiveFunction::new(
             givens_adfn,
-            &sub_prob_res_fns.adfn_1,
+            &sub_prob_res_fns.adfn_1(),
             residual_scaling,
             residual_agg_fn_gen.clone(),
             if use_scaling {
@@ -202,7 +202,10 @@ where
     }
 
     /// The `argmin` optimizer uses only the number of active parameters for this sub-problem. Before handing inputs fromt the optimizer into the residual functions, we need to reconstruct the full opt space parameter vector. This function does that.
-    pub fn optspace_fullprob_input_from_subprob_input(&self, opt_space_inputs: &Vec<f64>) -> [f64; N] {
+    pub fn optspace_fullprob_input_from_subprob_input(
+        &self,
+        opt_space_inputs: &Vec<f64>,
+    ) -> [f64; N] {
         debug_assert!(
             opt_space_inputs.len() == self.block.unknown_idxs.len(),
             "Parameter vector length ({}) for reconstruction did not match number subproblem unknowns ({})",

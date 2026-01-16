@@ -5,7 +5,8 @@ use argmin::{
     solver::{gaussnewton::GaussNewtonLS, linesearch::MoreThuenteLineSearch},
 };
 
-impl<G64, U64, Gadfn, Uadfn, R, const N: usize> SubProblem<G64, U64, Gadfn, Uadfn, R, ResidNoOpGaussNewton, N>
+impl<G64, U64, Gadfn, Uadfn, R, const N: usize>
+    SubProblem<G64, U64, Gadfn, Uadfn, R, ResidNoOpGaussNewton, N>
 where
     G64: GivenParamsFor<f64, N>,
     U64: UnknownParamsFor<f64, N>,

@@ -1,5 +1,8 @@
 use crate::prelude::*;
-use system_solver::prelude::{ad_trait::AD, nalgebra::{ComplexField, RealField, UnitVector2, Vector2}};
+use system_solver::prelude::{
+    ad_trait::AD,
+    nalgebra::{ComplexField, RealField, UnitVector2, Vector2},
+};
 
 fn normal_from_tan_angle<T: AD>(tangent_angle: T) -> UnitVector2<T> {
     UnitVector2::new_normalize(Vector2::new(

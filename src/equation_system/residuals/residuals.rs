@@ -56,9 +56,9 @@ macro_rules! residual_fns {
 /// Separate type parameters allow the givens/unknowns types to be parameterized by the AD type.
 #[derive(Clone)]
 pub struct ResidualFns<G64, U64, Gadfn, Uadfn> {
-    pub f64: Vec<Rc<fn(&G64, &U64) -> f64>>,
-    pub adfn_1: Vec<Rc<fn(&Gadfn, &Uadfn) -> adfn<1>>>,
-    pub fn_names: Vec<&'static str>,
+    f64: Vec<Rc<fn(&G64, &U64) -> f64>>,
+    adfn_1: Vec<Rc<fn(&Gadfn, &Uadfn) -> adfn<1>>>,
+    fn_names: Vec<&'static str>,
 }
 
 /// Create ResidualFns for types that are generic over T: AD.
@@ -70,11 +70,11 @@ macro_rules! residual_fns_for_generic_params {
         $crate::equation_system::residuals::residuals::ResidualFns::<
             $g<f64>, $u<f64>,
             $g<ad_trait::forward_ad::adfn::adfn<1>>, $u<ad_trait::forward_ad::adfn::adfn<1>>
-        > {
-            f64: vec![$(std::rc::Rc::new($fn_name::<f64>)),*],
-            adfn_1: vec![$(std::rc::Rc::new($fn_name::<ad_trait::forward_ad::adfn::adfn<1>>)),*],
-            fn_names: vec![$(stringify!($fn_name)),*],
-        }
+        >::new(
+            vec![$(std::rc::Rc::new($fn_name::<f64>)),*],
+            vec![$(std::rc::Rc::new($fn_name::<ad_trait::forward_ad::adfn::adfn<1>>)),*],
+            vec![$(stringify!($fn_name)),*],
+        )
     };
 }
 
@@ -95,6 +95,34 @@ fn filter_res_fns_to_block<T, G, U>(
 }
 
 impl<G64, U64, Gadfn, Uadfn> ResidualFns<G64, U64, Gadfn, Uadfn> {
+    /// Creates a new ResidualFns instance with the given function vectors.
+    pub fn new(
+        f64: Vec<Rc<fn(&G64, &U64) -> f64>>,
+        adfn_1: Vec<Rc<fn(&Gadfn, &Uadfn) -> adfn<1>>>,
+        fn_names: Vec<&'static str>,
+    ) -> Self {
+        Self {
+            f64,
+            adfn_1,
+            fn_names,
+        }
+    }
+
+    /// Returns a reference to the f64 residual functions.
+    pub fn f64(&self) -> &Vec<Rc<fn(&G64, &U64) -> f64>> {
+        &self.f64
+    }
+
+    /// Returns a reference to the adfn<1> residual functions.
+    pub fn adfn_1(&self) -> &Vec<Rc<fn(&Gadfn, &Uadfn) -> adfn<1>>> {
+        &self.adfn_1
+    }
+
+    /// Returns a reference to the function names.
+    pub fn fn_names(&self) -> &Vec<&'static str> {
+        &self.fn_names
+    }
+
     /// Filters the residual functions to only those in the given solution block.
     pub fn filter_res_fns_to_block(
         &self,
