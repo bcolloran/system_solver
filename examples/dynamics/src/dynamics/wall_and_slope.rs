@@ -1,6 +1,5 @@
-use ad_trait::AD;
-
 use crate::{dynamics::state::DynamicsState, prelude::*, total_accel_2d};
+use system_solver::prelude::ad_trait::AD;
 
 pub fn wall_slide_accel_at_wall_terminal_vel_residual<T: AD>(
     givens: &DynamicsGivenParams<T>,

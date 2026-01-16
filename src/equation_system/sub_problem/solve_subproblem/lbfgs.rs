@@ -1,4 +1,5 @@
 use crate::prelude::{opt_tools::MyObserver, *};
+use ad_trait::forward_ad::adfn::adfn;
 use argmin::{
     core::Executor,
     solver::{
@@ -7,12 +8,16 @@ use argmin::{
     },
 };
 
-impl<R, A> SubProblem<R, A>
+impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
 where
+    G64: GivenParamsFor<f64, N>,
+    U64: UnknownParamsFor<f64, N>,
+    Gadfn: GivenParamsFor<adfn<1>, N>,
+    Uadfn: UnknownParamsFor<adfn<1>, N>,
     R: ResidTransHOF,
     A: ResidAggFnToScalarGen,
 {
-    pub fn solve_lbfgs(&self) -> Result<DynamicsDerivedParams<f64>, EqSysError> {
+    pub fn solve_lbfgs(&self) -> Result<U64, EqSysError> {
         self.print_pre_optimization_summary();
 
         let linesearch: BacktrackingLineSearch<

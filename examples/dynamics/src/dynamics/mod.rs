@@ -6,8 +6,7 @@ use crate::{
     },
     prelude::*,
 };
-use ad_trait::AD;
-use nalgebra::Vector2;
+use system_solver::prelude::{ad_trait::AD, nalgebra::Vector2};
 
 pub mod air;
 pub mod ground;

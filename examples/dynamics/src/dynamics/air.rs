@@ -1,7 +1,5 @@
 use crate::prelude::*;
-
-use ad_trait::AD;
-use nalgebra::Vector2;
+use system_solver::prelude::{ad_trait::AD, nalgebra::Vector2};
 
 /// Note in real code, input is guaranteed to be constrained to unit disk, so not worried about large diagonal inputs.
 pub fn air_thrust_2d<T: AD>(input: Vector2<T>, max_air_thrust: T) -> Vector2<T> {

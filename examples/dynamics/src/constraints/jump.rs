@@ -1,10 +1,9 @@
-use ad_trait::AD;
-
 use crate::{
     air_accel_2d,
     constraints::integrate::{IntegrationState, step_state_to_t_with_acc_fn},
     prelude::*,
 };
+use system_solver::prelude::ad_trait::AD;
 
 pub fn jump_height_residual<T: AD>(
     givens: &DynamicsGivenParams<T>,

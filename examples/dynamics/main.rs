@@ -1,5 +1,6 @@
-use player_dynamics::prelude::*;
-use player_dynamics::{
+use ad_trait::forward_ad::adfn::adfn;
+use dynamics_example::prelude::*;
+use dynamics_example::{
     constraints::{
         aerial::{
             air_no_accel_at_max_air_speed_in_zero_g_residual,
@@ -12,12 +13,23 @@ use player_dynamics::{
     },
     dynamics::wall_and_slope::wall_slide_accel_at_wall_terminal_vel_residual,
 };
-use std::rc::Rc;
 
-use param_solver::prelude::*;
+use system_solver::{prelude::*, residual_fns_for_generic_params};
+
+// Static field names for the unknowns - required for 'static lifetime
+static UNKNOWN_FIELD_NAMES: &[&str] = &[
+    "air_drag_coeff",
+    "air_thrust_max",
+    "g",
+    "jump_vy_0",
+    "jump_boost_force",
+    "run_force_max",
+    "run_drag_coeff",
+    "sticky_glove_force",
+];
 
 fn main() {
-    let givens = DynamicsGivenParams {
+    let givens_f64 = DynamicsGivenParams {
         mass: 55.5,
 
         jump_height: 3.3,
@@ -34,6 +46,9 @@ fn main() {
         wall_slide_terminal_vel: -4.4,
         sticky_glove_angle_deg: 25.0,
     };
+
+    // Convert givens to adfn<1> version for automatic differentiation
+    let givens_adfn: DynamicsGivenParams<adfn<1>> = givens_f64.to_ad();
 
     let unknowns = DynamicsDerivedParams {
         // analytic solution that we want to converge to: air_drag_coeff=38.509
@@ -52,7 +67,9 @@ fn main() {
         sticky_glove_force: 200.986967,
     };
 
-    let residual_fns = residual_fns![
+    // Use the macro to create ResidualFns with correctly monomorphized function pointers
+    let residual_fns = residual_fns_for_generic_params!(
+        DynamicsGivenParams, DynamicsDerivedParams;
         air_no_accel_at_max_air_speed_in_zero_g_residual,
         air_time_to_95pct_max_air_speed_in_zero_g_residual,
         jump_height_residual,
@@ -60,10 +77,12 @@ fn main() {
         jump_return_to_ground_in_time_down,
         run_accel_at_max_speed_residual,
         run_time_to_95pct_max_speed_residual,
-        wall_slide_accel_at_wall_terminal_vel_residual,
-    ];
+        wall_slide_accel_at_wall_terminal_vel_residual
+    );
 
-    let eq_sys = EquationSystemBuilder::new(givens, residual_fns).unwrap();
+    let eq_sys =
+        EquationSystemBuilder::new(givens_f64, givens_adfn, residual_fns, UNKNOWN_FIELD_NAMES)
+            .unwrap();
     let eq_sys = eq_sys.with_triangularization(&unknowns).unwrap();
     eq_sys.print_lower_tri_mat();
     eq_sys.print_solution_plan();

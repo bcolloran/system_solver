@@ -1,6 +1,10 @@
-use as_gd_res::AsGdRes;
-use field_names::FieldNames;
+use system_solver::equation_system::param_traits::{GivenParams, UnknownParams};
+use system_solver::prelude::*;
 
+use field_names_and_counts::FieldNames;
+use struct_to_array::StructToArray;
+
+// use as_gd_res::AsGdRes; // Only needed for Godot integration
 // use crate::DynamicsDerivedParams;
 // use nalgebra::{Complex, ComplexField as CF};
 
@@ -8,8 +12,7 @@ use field_names::FieldNames;
 /// These parameters are meant to be simple to understand and tune, and should
 /// use physical units that are intuitive-- how long a jump lasts, how high
 /// it goes, how fast something travels.
-#[derive(AsGdRes, Debug, Clone, Copy, PartialEq, struct_to_array::StructToArray)]
-#[as_gd_res_types(T = f32)]
+#[derive(Debug, Clone, Copy, PartialEq, StructToArray)]
 pub struct DynamicsGivenParams<T> {
     pub mass: T,
 
@@ -39,8 +42,7 @@ pub struct DynamicsGivenParams<T> {
 /// might not be critical in and of themselves to tune directly, but need to
 /// be set correctly to get the desired dynamics to work out.
 
-#[derive(Copy, Clone, Debug, AsGdRes, struct_to_array::StructToArray, FieldNames)]
-#[as_gd_res_types(T = f32)]
+#[derive(Copy, Clone, Debug, StructToArray, FieldNames)]
 pub struct DynamicsDerivedParams<T> {
     pub air_drag_coeff: T,
     pub air_thrust_max: T,
@@ -62,8 +64,11 @@ pub struct DynamicsDerivedParams<T> {
 pub const N_UNKNOWNS: usize =
     core::mem::size_of::<DynamicsDerivedParams<f32>>() / core::mem::size_of::<f32>();
 
-impl<T> DynamicsDerivedParams<T> {
-    pub fn field_names() -> [&'static str; N_UNKNOWNS] {
-        DynamicsDerivedParams::<T>::FIELDS
-    }
-}
+pub const N_GIVENS: usize =
+    core::mem::size_of::<DynamicsGivenParams<f32>>() / core::mem::size_of::<f32>();
+
+// Implement system_solver traits
+impl<T> GivenParams for DynamicsGivenParams<T> where T: Clone + Copy + std::fmt::Debug {}
+impl<T> UnknownParams for DynamicsDerivedParams<T> where T: Clone + Copy + std::fmt::Debug {}
+
+// Note: to_ad() conversion methods are defined in dynamics/test_params.rs

@@ -3,12 +3,17 @@ pub mod lbfgs;
 pub mod simulated_annealing;
 pub mod solver_run_log_data;
 
+use ad_trait::forward_ad::adfn::adfn;
 use argmin::core::{Operator, State};
 
 use crate::prelude::*;
 
-impl<R, A> SubProblem<R, A>
+impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
 where
+    G64: GivenParamsFor<f64, N>,
+    U64: UnknownParamsFor<f64, N>,
+    Gadfn: GivenParamsFor<adfn<1>, N>,
+    Uadfn: UnknownParamsFor<adfn<1>, N>,
     R: ResidTransHOF,
     A: ResidAggHOF,
 {
@@ -31,7 +36,7 @@ where
             );
     }
 
-    fn print_post_optimization_summary<S, G, J>(&self, opt_res: &OptRes<S, R, A, G, J>) {
+    fn print_post_optimization_summary<S, Gr, J>(&self, opt_res: &OptRes<S, G64, U64, Gadfn, Uadfn, R, A, N, Gr, J>) {
         println!(
             "------- post optimization (block {})-------",
             self.block.block_idx

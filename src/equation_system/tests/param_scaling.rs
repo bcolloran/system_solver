@@ -1,4 +1,4 @@
-// use player_dynamics::assert_approx_eq;
+// use dynamics_example::assert_approx_eq;
 // use proptest::prelude::*;
 // use test_case::test_case;
 

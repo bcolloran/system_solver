@@ -18,36 +18,54 @@ pub struct ToVector;
 /// A sub-problem within an equation system optimization problem.
 ///
 /// Type parameters:
+/// - `G64`: The given parameters type for f64
+/// - `U64`: The unknown parameters type for f64
+/// - `Gadfn`: The given parameters type for adfn<1>
+/// - `Uadfn`: The unknown parameters type for adfn<1>
 /// - `R`: The residual transformation function generator.
 /// - `A`: The residual aggregation function generator.
+/// - `N`: The number of unknown parameters
 #[derive(Clone)]
-pub struct SubProblem<R, A>
+pub struct SubProblem<G64, U64, Gadfn, Uadfn, R, A, const N: usize>
 where
+    G64: GivenParamsFor<f64, N>,
+    U64: UnknownParamsFor<f64, N>,
+    Gadfn: GivenParamsFor<adfn<1>, N>,
+    Uadfn: UnknownParamsFor<adfn<1>, N>,
     R: ResidTransHOF,
     A: ResidAggHOF,
 {
     pub loss_fn_engine: Rc<
-        FunctionEngine<ObjectiveFunction<f64, R, A>, ObjectiveFunction<adfn<1>, R, A>, ForwardAD>,
+        FunctionEngine<
+            ObjectiveFunction<f64, G64, U64, R, A, N>,
+            ObjectiveFunction<adfn<1>, Gadfn, Uadfn, R, A, N>,
+            ForwardAD,
+        >,
     >,
     pub block: SolutionBlock,
-    pub param_scaler: Option<ParamScaler<f64>>,
-    pub initial_unknowns: DynamicsDerivedParams<f64>,
+    pub param_scaler: Option<ParamScaler<f64, N>>,
+    pub initial_unknowns: U64,
     pub residual_agg_fn_gen: A,
     pub rng: Arc<Mutex<StdRng>>,
     pub sa_cfg: Option<SimulatedAnnealingConfig>,
 }
 
-impl<R, A> SubProblem<R, A>
+impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
 where
+    G64: GivenParamsFor<f64, N>,
+    U64: UnknownParamsFor<f64, N>,
+    Gadfn: GivenParamsFor<adfn<1>, N>,
+    Uadfn: UnknownParamsFor<adfn<1>, N>,
     R: ResidTransHOF,
     A: ResidAggHOF,
 {
     /// Creates a new SubProblem for the given solution block.
     pub fn new(
-        super_prob_resid_fn: &ResidualFns,
+        super_prob_resid_fn: &ResidualFns<G64, U64, Gadfn, Uadfn>,
         solution_block: &SolutionBlock,
-        givens: &DynamicsGivenParams<f64>,
-        initial_unknowns: &DynamicsDerivedParams<f64>,
+        givens_f64: &G64,
+        givens_adfn: &Gadfn,
+        initial_unknowns: &U64,
         residual_scaling: R,
         residual_agg_fn_gen: A,
         use_scaling: bool,
@@ -56,7 +74,7 @@ where
         let sub_prob_res_fns = super_prob_resid_fn.filter_res_fns_to_block(solution_block);
 
         let loss_f64 = ObjectiveFunction::new(
-            givens,
+            givens_f64,
             &sub_prob_res_fns.f64,
             residual_scaling.clone(),
             residual_agg_fn_gen.clone(),
@@ -68,7 +86,7 @@ where
         );
 
         let loss_adfn = ObjectiveFunction::new(
-            givens,
+            givens_adfn,
             &sub_prob_res_fns.adfn_1,
             residual_scaling,
             residual_agg_fn_gen.clone(),
@@ -109,7 +127,7 @@ where
     }
 
     /// Converts a full-problem parameter vector from optimization space to model space
-    pub fn optspace_to_modspace(&self, opt_params: &[f64; N_UNKNOWNS]) -> [f64; N_UNKNOWNS] {
+    pub fn optspace_to_modspace(&self, opt_params: &[f64; N]) -> [f64; N] {
         if let Some(param_scaling) = &self.param_scaler {
             param_scaling.opt_to_model(*opt_params)
         } else {
@@ -118,7 +136,7 @@ where
     }
 
     /// Converts a full-problem parameter vector from model space to optimization space
-    pub fn modspace_to_optspace(&self, model_params: &[f64; N_UNKNOWNS]) -> [f64; N_UNKNOWNS] {
+    pub fn modspace_to_optspace(&self, model_params: &[f64; N]) -> [f64; N] {
         if let Some(param_scaling) = &self.param_scaler {
             param_scaling.model_to_opt(*model_params)
         } else {
@@ -127,19 +145,16 @@ where
     }
 
     /// Converts a full-problem model-space parameter vector to a param struct.
-    pub fn modspace_to_params(
-        &self,
-        model_params: &[f64; N_UNKNOWNS],
-    ) -> DynamicsDerivedParams<f64> {
-        DynamicsDerivedParams::from_arr(*model_params)
+    pub fn modspace_to_params(&self, model_params: &[f64; N]) -> U64 {
+        U64::from_arr(*model_params)
     }
 
     pub fn select_subprob_items(&self, items: &[f64]) -> Vec<f64> {
         debug_assert!(
-            items.len() == N_UNKNOWNS,
+            items.len() == N,
             "Items length ({}) does not match expected number of unknowns ({})",
             items.len(),
-            N_UNKNOWNS
+            N
         );
         self.block
             .unknown_idxs
@@ -172,28 +187,22 @@ where
         )
     }
 
-    pub fn fullprob_initial_params_optspace(&self) -> [f64; N_UNKNOWNS] {
+    pub fn fullprob_initial_params_optspace(&self) -> [f64; N] {
         let p_model = self.initial_unknowns.to_arr();
         self.modspace_to_optspace(&p_model)
     }
 
     /// Reconstructs unknown params struct by patching in optimized sub-problem parameters into initial parameter set.
-    pub fn params_with_subprob_optimizer_result(
-        &self,
-        p_opt: &Vec<f64>,
-    ) -> DynamicsDerivedParams<f64> {
+    pub fn params_with_subprob_optimizer_result(&self, p_opt: &Vec<f64>) -> U64 {
         let full_optspace = self.optspace_fullprob_input_from_subprob_input(p_opt);
 
         let full_modspace = self.optspace_to_modspace(&full_optspace);
 
-        DynamicsDerivedParams::from_arr(full_modspace)
+        U64::from_arr(full_modspace)
     }
 
     /// The `argmin` optimizer uses only the number of active parameters for this sub-problem. Before handing inputs fromt the optimizer into the residual functions, we need to reconstruct the full opt space parameter vector. This function does that.
-    pub fn optspace_fullprob_input_from_subprob_input(
-        &self,
-        opt_space_inputs: &Vec<f64>,
-    ) -> [f64; N_UNKNOWNS] {
+    pub fn optspace_fullprob_input_from_subprob_input(&self, opt_space_inputs: &Vec<f64>) -> [f64; N] {
         debug_assert!(
             opt_space_inputs.len() == self.block.unknown_idxs.len(),
             "Parameter vector length ({}) for reconstruction did not match number subproblem unknowns ({})",
@@ -211,8 +220,12 @@ where
     }
 }
 
-impl<R, A> SubProblem<R, A>
+impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
 where
+    G64: GivenParamsFor<f64, N>,
+    U64: UnknownParamsFor<f64, N>,
+    Gadfn: GivenParamsFor<adfn<1>, N>,
+    Uadfn: UnknownParamsFor<adfn<1>, N>,
     R: ResidTransHOF,
     A: ResidAggHOF,
 {

@@ -1,6 +1,5 @@
-use ad_trait::AD;
-
 use crate::{DynamicsDerivedParams, DynamicsGivenParams};
+use system_solver::prelude::ad_trait::AD;
 
 impl DynamicsGivenParams<f64> {
     pub fn to_ad<T: AD>(self) -> DynamicsGivenParams<T> {

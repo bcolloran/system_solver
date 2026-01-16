@@ -1,5 +1,3 @@
-use player_dynamics::DynamicsDerivedParams;
-
 use crate::prelude::*;
 
 #[derive(Debug)]
@@ -14,14 +12,19 @@ impl SolutionPlan {
         Self { blocks }
     }
 
-    pub fn print_solution_plan(&self, res_fns: &ResidualFns) {
+    pub fn print_solution_plan<G64, U64, Gadfn, Uadfn>(&self, res_fns: &ResidualFns<G64, U64, Gadfn, Uadfn>, field_names: &[&str]) {
         for block in self.blocks.iter() {
             println!("Solution Block {}:", block.block_idx);
-            self.print_solution_block(block, res_fns);
+            self.print_solution_block(block, res_fns, field_names);
         }
     }
 
-    pub fn print_solution_block(&self, block: &SolutionBlock, res_fns: &ResidualFns) {
+    pub fn print_solution_block<G64, U64, Gadfn, Uadfn>(
+        &self,
+        block: &SolutionBlock,
+        res_fns: &ResidualFns<G64, U64, Gadfn, Uadfn>,
+        field_names: &[&str],
+    ) {
         println!("  equations:");
         // print the name of each equation
         for e in &block.equation_idxs {
@@ -31,7 +34,7 @@ impl SolutionPlan {
         println!("  unknowns:");
 
         for u in &block.unknown_idxs {
-            let unk_name = DynamicsDerivedParams::<f32>::field_names()[*u];
+            let unk_name = field_names[*u];
             println!("    {u}: {}", unk_name);
         }
     }

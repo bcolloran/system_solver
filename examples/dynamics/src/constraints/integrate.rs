@@ -1,7 +1,5 @@
-use ad_trait::AD;
-use nalgebra::Vector2;
-
 use crate::prelude::*;
+use system_solver::prelude::{ad_trait::AD, nalgebra::Vector2};
 
 /// Struct wraps the DynamicsState, as well as holding a couple other variables that the integrator should track but which do not need to be seen by the dynamics functions.
 #[derive(Copy, Clone, Debug)]

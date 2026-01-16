@@ -401,10 +401,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "field_names"
-version = "0.2.0"
+name = "field_names_and_counts"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cca4fdab1b9b7e274e7de51202e37f9cfa542b28c77f8d09b817d77a726b4807"
+checksum = "00db85bcb50b9d725bcd4847b7f83462307cdacfb46cd05e98219d1140541ecc"
+dependencies = [
+ "field_names_and_counts_derive",
+]
+
+[[package]]
+name = "field_names_and_counts_derive"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32511e4da47a55b56eb80b854ada96e7985ce689d6246b3c8adf34a0ac11cefe"
 dependencies = [
  "darling 0.13.4",
  "proc-macro2",
@@ -884,13 +893,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
-name = "player_dynamics"
+name = "dynamics_example"
 version = "0.1.0"
 dependencies = [
- "ad_trait",
- "field_names",
- "nalgebra",
- "struct_to_array",
  "system_solver",
  "test-case",
 ]
@@ -1281,6 +1286,7 @@ dependencies = [
  "anyhow",
  "argmin",
  "argmin-math",
+ "field_names_and_counts",
  "nalgebra",
  "nalgebra_block_triangularization",
  "rand",

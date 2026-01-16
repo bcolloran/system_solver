@@ -1,3 +1,4 @@
+use ad_trait::forward_ad::adfn::adfn;
 use anyhow::bail;
 use argmin::{
     core::{CostFunction, Error as ArgminError, Gradient, Jacobian, Operator},
@@ -11,8 +12,12 @@ use rand::{distr, prelude::*};
 /// Note that in the case of residual aggregation to scalar, the Operator returns a 1×1 matrix because aggregation to scalar happens *within* the FunctionEngine call (as it must in order to compute derivatives correctly).
 ///
 /// Thus, we can just use the Operator implementation to get the scalar cost value as a 1×1 matrix, and then extract the scalar from that matrix in the CostFunction implementation.
-impl<R, A> CostFunction for SubProblem<R, A>
+impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> CostFunction for SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
 where
+    G64: GivenParamsFor<f64, N>,
+    U64: UnknownParamsFor<f64, N>,
+    Gadfn: GivenParamsFor<adfn<1>, N>,
+    Uadfn: UnknownParamsFor<adfn<1>, N>,
     R: ResidTransHOF,
     A: ResidAggFnToScalarGen,
 {
@@ -25,7 +30,15 @@ where
     }
 }
 
-impl<R: ResidTransHOF, A: ResidAggHOF> Operator for SubProblem<R, A> {
+impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> Operator for SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
+where
+    G64: GivenParamsFor<f64, N>,
+    U64: UnknownParamsFor<f64, N>,
+    Gadfn: GivenParamsFor<adfn<1>, N>,
+    Uadfn: UnknownParamsFor<adfn<1>, N>,
+    R: ResidTransHOF,
+    A: ResidAggHOF,
+{
     type Param = nalgebra::DVector<f64>;
     type Output = nalgebra::DVector<f64>;
 
@@ -49,7 +62,15 @@ impl<R: ResidTransHOF, A: ResidAggHOF> Operator for SubProblem<R, A> {
     }
 }
 
-impl<R: ResidTransHOF, A: ResidAggFnToScalarGen> Gradient for SubProblem<R, A> {
+impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> Gradient for SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
+where
+    G64: GivenParamsFor<f64, N>,
+    U64: UnknownParamsFor<f64, N>,
+    Gadfn: GivenParamsFor<adfn<1>, N>,
+    Uadfn: UnknownParamsFor<adfn<1>, N>,
+    R: ResidTransHOF,
+    A: ResidAggFnToScalarGen,
+{
     type Param = nalgebra::DVector<f64>;
     type Gradient = nalgebra::DVector<f64>;
 
@@ -79,7 +100,14 @@ impl<R: ResidTransHOF, A: ResidAggFnToScalarGen> Gradient for SubProblem<R, A> {
     }
 }
 
-impl<R: ResidTransHOF> Jacobian for SubProblem<R, ResidNoOpGaussNewton> {
+impl<G64, U64, Gadfn, Uadfn, R, const N: usize> Jacobian for SubProblem<G64, U64, Gadfn, Uadfn, R, ResidNoOpGaussNewton, N>
+where
+    G64: GivenParamsFor<f64, N>,
+    U64: UnknownParamsFor<f64, N>,
+    Gadfn: GivenParamsFor<adfn<1>, N>,
+    Uadfn: UnknownParamsFor<adfn<1>, N>,
+    R: ResidTransHOF,
+{
     type Param = nalgebra::DVector<f64>;
     type Jacobian = nalgebra::DMatrix<f64>;
 
@@ -101,64 +129,15 @@ impl<R: ResidTransHOF> Jacobian for SubProblem<R, ResidNoOpGaussNewton> {
     }
 }
 
-// impl<R: ResidTransHOF, A: ResidAggHOF> Anneal for SubProblem<R, A> {
-//     type Param = nalgebra::DVector<f64>;
-//     type Output = nalgebra::DVector<f64>;
-//     type Float = f64;
-
-//     /// Anneal a parameter vector by randomly perturbing its elements.
-//     /// This is taking steps in *optimization space*, which will allow jumps of mutliple orders of magnitude in model space if going through an exponential link fn.
-//     fn anneal(&self, p: &Self::Param, temp: Self::Float) -> Result<Self::Output, ArgminError> {
-//         if p.len() != self.block.unknown_idxs.len() {
-//             bail!(
-//                 "Parameter vector length ({}) for subproblem anneal function did not match number subproblem unknowns ({})",
-//                 p.len(),
-//                 self.block.unknown_idxs.len()
-//             );
-//         }
-
-//         let mut param_n = p.clone();
-
-//         let mut rng = self.rng.lock().unwrap();
-//         // let mut rng = rand::rng();
-
-//         let id_distr = Uniform::try_from(0..p.len())?;
-
-//         let val_distr = Uniform::new_inclusive(-2.0, 2.0)?;
-//         // Perform modifications to a degree proportional to the current temperature `temp`.
-//         for _ in 0..(temp.floor() as u64 + 1) {
-//             // Compute random index of the parameter vector using the supplied random number
-//             // generator.
-//             let idx = rng.sample(id_distr);
-
-//             // Compute random number in [0.1, 0.1].
-//             let val = rng.sample(val_distr);
-
-//             // modify previous parameter value at random position `idx` by `val`
-//             param_n[idx] += val;
-//         }
-//         Ok(param_n)
-//     }
-// }
-
-/*
-Add these fields to your SubProblem:
-
-pub struct SubProblem<R, A> {
-    ...
-    sa_rng: Arc<Mutex<StdRng>>,
-    sa_cfg: SaAnnealCfg,
-}
-
-And initialize them somewhere (constructor / builder / before solve):
-    sa_rng: Arc::new(Mutex::new(StdRng::seed_from_u64(0))),
-    sa_cfg: SaAnnealCfg { init_temp: 100.0, ..Default::default() },
-
-If you want full run-to-run determinism, also seed the solver RNG via
-SimulatedAnnealing::new_with_rng(temp, StdRng::seed_from_u64(...))?.
-*/
-
-impl<R: ResidTransHOF, A: ResidAggHOF> Anneal for SubProblem<R, A> {
+impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> Anneal for SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
+where
+    G64: GivenParamsFor<f64, N>,
+    U64: UnknownParamsFor<f64, N>,
+    Gadfn: GivenParamsFor<adfn<1>, N>,
+    Uadfn: UnknownParamsFor<adfn<1>, N>,
+    R: ResidTransHOF,
+    A: ResidAggHOF,
+{
     type Param = DVector<f64>;
     type Output = DVector<f64>;
     type Float = f64;

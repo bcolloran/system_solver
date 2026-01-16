@@ -1,7 +1,5 @@
 use crate::prelude::*;
-
-use ad_trait::AD;
-use nalgebra::{UnitVector2, Vector2};
+use system_solver::prelude::{ad_trait::AD, nalgebra::{UnitVector2, Vector2}};
 
 /// Estimates the normal force from gravity for a surface contact.
 ///
@@ -104,7 +102,7 @@ mod ground_contact_helper_tests {
 /// # Examples
 /// ```
 /// use nalgebra::{UnitVector2, Vector2};
-/// use player_dynamics::dynamics::ground::ground_throttle_from_input;
+/// use dynamics_example::dynamics::ground::ground_throttle_from_input;
 ///
 /// // Horizontal ground, input points right
 /// let tangent = UnitVector2::new_normalize(Vector2::new(1.0, 0.0));

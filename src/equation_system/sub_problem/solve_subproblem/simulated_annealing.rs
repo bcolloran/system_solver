@@ -1,4 +1,5 @@
 use crate::prelude::{opt_tools::MyObserver, *};
+use ad_trait::forward_ad::adfn::adfn;
 use argmin::{core::Executor, solver::simulatedannealing::SimulatedAnnealing};
 
 /// Configuration for the annealing proposal (in *optimization space*, e.g. log-space).
@@ -49,8 +50,16 @@ impl Default for SimulatedAnnealingConfig {
     }
 }
 
-impl<R: ResidTransHOF, A: ResidAggFnToScalarGen> SubProblem<R, A> {
-    pub fn solve_simulated_annealing(&self) -> Result<DynamicsDerivedParams<f64>, EqSysError> {
+impl<G64, U64, Gadfn, Uadfn, R, A, const N: usize> SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>
+where
+    G64: GivenParamsFor<f64, N>,
+    U64: UnknownParamsFor<f64, N>,
+    Gadfn: GivenParamsFor<adfn<1>, N>,
+    Uadfn: UnknownParamsFor<adfn<1>, N>,
+    R: ResidTransHOF,
+    A: ResidAggFnToScalarGen,
+{
+    pub fn solve_simulated_annealing(&self) -> Result<U64, EqSysError> {
         self.print_pre_optimization_summary();
 
         let optspace_params = self.subprob_initial_params_optspace().clone();

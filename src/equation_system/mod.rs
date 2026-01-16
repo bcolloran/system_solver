@@ -18,6 +18,7 @@ use struct_to_array::StructToVec;
 pub mod objective;
 pub mod opt_tools;
 pub mod param_scaling;
+pub mod param_traits;
 pub mod residuals;
 pub mod solution_plan;
 pub mod sub_problem;
@@ -25,43 +26,69 @@ pub mod sub_problem;
 #[cfg(test)]
 mod tests;
 
-pub struct EquationSystemBuilder<S> {
-    givens: DynamicsGivenParams<f64>,
+/// EquationSystemBuilder for solving systems of equations.
+///
+/// Type parameters:
+/// - `G64`: Given params type for f64 (e.g., `DynamicsGivenParams<f64>`)
+/// - `U64`: Unknown params type for f64 (e.g., `DynamicsDerivedParams<f64>`)
+/// - `Gadfn`: Given params type for adfn<1> (e.g., `DynamicsGivenParams<adfn<1>>`)
+/// - `Uadfn`: Unknown params type for adfn<1> (e.g., `DynamicsDerivedParams<adfn<1>>`)
+/// - `S`: State type (e.g., `EqSysStateInit` or `EqSysSolutionPlan`)
+/// - `N`: Number of unknown parameters
+pub struct EquationSystemBuilder<G64, U64, Gadfn, Uadfn, S, const N: usize>
+where
+    G64: GivenParamsFor<f64, N>,
+    U64: UnknownParamsFor<f64, N>,
+    Gadfn: GivenParamsFor<adfn<1>, N>,
+    Uadfn: UnknownParamsFor<adfn<1>, N>,
+{
+    givens_f64: G64,
+    givens_adfn: Gadfn,
     /// The raw residual functions before:
     /// - filtering to sub-problems
     /// - parameter scaling
     /// - residual transforms
-    raw_res_fns: ResidualFns,
+    raw_res_fns: ResidualFns<G64, U64, Gadfn, Uadfn>,
     /// The function engine to compute residuals and derivatives of the
     /// raw residual functions.
     raw_res_fn_engine: FunctionEngine<
-        ObjectiveFunction<f64, ResidTransIdentity, ResidNoOpGaussNewton>,
-        ObjectiveFunction<adfn<1>, ResidTransIdentity, ResidNoOpGaussNewton>,
+        ObjectiveFunction<f64, G64, U64, ResidTransIdentity, ResidNoOpGaussNewton, N>,
+        ObjectiveFunction<adfn<1>, Gadfn, Uadfn, ResidTransIdentity, ResidNoOpGaussNewton, N>,
         ForwardAD,
     >,
+    /// Field names for the unknown parameters (for debugging/logging)
+    unknown_field_names: &'static [&'static str],
     state: S,
 }
 
 pub struct EqSysStateInit;
 
-impl EquationSystemBuilder<()> {
+impl<G64, U64, Gadfn, Uadfn, const N: usize> EquationSystemBuilder<G64, U64, Gadfn, Uadfn, (), N>
+where
+    G64: GivenParamsFor<f64, N> + Clone,
+    U64: UnknownParamsFor<f64, N>,
+    Gadfn: GivenParamsFor<adfn<1>, N> + Clone,
+    Uadfn: UnknownParamsFor<adfn<1>, N>,
+{
     pub fn new(
-        givens: DynamicsGivenParams<f64>,
-        raw_residual_fns: ResidualFns,
-    ) -> Result<EquationSystemBuilder<EqSysStateInit>, EqSysError> {
+        givens_f64: G64,
+        givens_adfn: Gadfn,
+        raw_residual_fns: ResidualFns<G64, U64, Gadfn, Uadfn>,
+        unknown_field_names: &'static [&'static str],
+    ) -> Result<EquationSystemBuilder<G64, U64, Gadfn, Uadfn, EqSysStateInit, N>, EqSysError> {
         let num_eqs = raw_residual_fns.f64.len();
         let identity_loss_gen = ResidTransIdentity { n: num_eqs };
         let resid_pass_through = ResidNoOpGaussNewton::new_fullprob(num_eqs);
 
         let residuals_f64 = ObjectiveFunction::new(
-            &givens,
+            &givens_f64,
             &raw_residual_fns.f64,
             identity_loss_gen.clone(),
             resid_pass_through.clone(),
             None,
         );
         let residuals_adfn = ObjectiveFunction::new(
-            &givens,
+            &givens_adfn,
             &raw_residual_fns.adfn_1,
             identity_loss_gen,
             resid_pass_through.clone(),
@@ -75,19 +102,29 @@ impl EquationSystemBuilder<()> {
         );
 
         Ok(EquationSystemBuilder {
-            givens,
+            givens_f64,
+            givens_adfn,
             raw_res_fns: raw_residual_fns,
             raw_res_fn_engine: res_fn_engine,
+            unknown_field_names,
             state: EqSysStateInit {},
         })
     }
 }
 
-impl<T> EquationSystemBuilder<T> {
+impl<G64, U64, Gadfn, Uadfn, const N: usize>
+    EquationSystemBuilder<G64, U64, Gadfn, Uadfn, EqSysStateInit, N>
+where
+    G64: GivenParamsFor<f64, N>,
+    U64: UnknownParamsFor<f64, N>,
+    Gadfn: GivenParamsFor<adfn<1>, N>,
+    Uadfn: UnknownParamsFor<adfn<1>, N>,
+{
     pub fn with_triangularization(
         self,
-        inital_unknowns: &DynamicsDerivedParams<f64>,
-    ) -> Result<EquationSystemBuilder<EqSysSolutionPlan>, EqSysError> {
+        inital_unknowns: &U64,
+    ) -> Result<EquationSystemBuilder<G64, U64, Gadfn, Uadfn, EqSysSolutionPlan, N>, EqSysError>
+    {
         let unknowns_vec = inital_unknowns.to_arr();
         let (_val_all, grad_all) = self.raw_res_fn_engine.derivative(&unknowns_vec);
 
@@ -121,9 +158,11 @@ impl<T> EquationSystemBuilder<T> {
         let solution_plan = SolutionPlan::new(soln_blocks);
 
         Ok(EquationSystemBuilder {
-            givens: self.givens,
+            givens_f64: self.givens_f64,
+            givens_adfn: self.givens_adfn,
             raw_res_fns: self.raw_res_fns,
             raw_res_fn_engine: self.raw_res_fn_engine,
+            unknown_field_names: self.unknown_field_names,
             state: EqSysSolutionPlan {
                 binary_matrix,
                 lower_tri_mat: u,
@@ -166,7 +205,14 @@ pub struct EqSysSolutionPlan {
     solution_plan: SolutionPlan,
 }
 
-impl EquationSystemBuilder<EqSysSolutionPlan> {
+impl<G64, U64, Gadfn, Uadfn, const N: usize>
+    EquationSystemBuilder<G64, U64, Gadfn, Uadfn, EqSysSolutionPlan, N>
+where
+    G64: GivenParamsFor<f64, N>,
+    U64: UnknownParamsFor<f64, N>,
+    Gadfn: GivenParamsFor<adfn<1>, N>,
+    Uadfn: UnknownParamsFor<adfn<1>, N>,
+{
     pub fn block_structure(&self) -> &LowerBtfStructure {
         &self.state.block_structure
     }
@@ -200,7 +246,7 @@ impl EquationSystemBuilder<EqSysSolutionPlan> {
         println!("Permuted unknowns names:");
 
         for &c in &self.state.block_structure.col_order {
-            let unk_name = DynamicsDerivedParams::<f32>::field_names()[c];
+            let unk_name = self.unknown_field_names[c];
             println!("   {}", unk_name);
         }
     }
@@ -208,10 +254,10 @@ impl EquationSystemBuilder<EqSysSolutionPlan> {
     pub fn print_solution_plan(&self) {
         self.state
             .solution_plan
-            .print_solution_plan(&self.raw_res_fns);
+            .print_solution_plan(&self.raw_res_fns, self.unknown_field_names);
     }
 
-    pub fn print_per_fn_residuals_at_params(&self, params: &DynamicsDerivedParams<f64>) {
+    pub fn print_per_fn_residuals_at_params(&self, params: &U64) {
         let residuals = self.raw_res_fn_engine.call(&params.to_vec());
 
         println!("Per-function residuals at given params (plan order):");
@@ -226,16 +272,12 @@ impl EquationSystemBuilder<EqSysSolutionPlan> {
         }
     }
 
-    /// Solves a single sub-problem using Particle Swarm Optimization as a pre-search.
-    /// This is done in *model space*, i.e. without parameter scaling.
-    ///
-    ///
-
+    /// Solves a single sub-problem using L-BFGS optimization.
     pub fn solve_sub_problem_lbfgs(
         &self,
         block: &SolutionBlock,
-        initial_unknowns: &DynamicsDerivedParams<f64>,
-    ) -> Result<DynamicsDerivedParams<f64>, EqSysError> {
+        initial_unknowns: &U64,
+    ) -> Result<U64, EqSysError> {
         let l2_loss_gen = ResidTransUnscaledL2 {
             n: self.raw_res_fns.f64.len(),
         };
@@ -243,7 +285,8 @@ impl EquationSystemBuilder<EqSysSolutionPlan> {
         let subprob = SubProblem::new(
             &self.raw_res_fns,
             &block,
-            &self.givens,
+            &self.givens_f64,
+            &self.givens_adfn,
             &initial_unknowns,
             l2_loss_gen,
             ResidAggSum {},
@@ -256,8 +299,8 @@ impl EquationSystemBuilder<EqSysSolutionPlan> {
     pub fn solve_sub_problem_simulated_annealing(
         &self,
         block: &SolutionBlock,
-        initial_unknowns: &DynamicsDerivedParams<f64>,
-    ) -> Result<DynamicsDerivedParams<f64>, EqSysError> {
+        initial_unknowns: &U64,
+    ) -> Result<U64, EqSysError> {
         let l2_loss_gen = ResidTransUnscaledL2 {
             n: self.raw_res_fns.f64.len(),
         };
@@ -265,7 +308,8 @@ impl EquationSystemBuilder<EqSysSolutionPlan> {
         let subprob = SubProblem::new(
             &self.raw_res_fns,
             &block,
-            &self.givens,
+            &self.givens_f64,
+            &self.givens_adfn,
             &initial_unknowns,
             l2_loss_gen,
             ResidAggSum {},
@@ -283,8 +327,8 @@ impl EquationSystemBuilder<EqSysSolutionPlan> {
     pub fn solve_sub_problem_gauss_newton(
         &self,
         block: &SolutionBlock,
-        initial_unknowns: &DynamicsDerivedParams<f64>,
-    ) -> Result<DynamicsDerivedParams<f64>, EqSysError> {
+        initial_unknowns: &U64,
+    ) -> Result<U64, EqSysError> {
         let l2_loss_gen = ResidTransUnscaledL2 {
             n: self.raw_res_fns.f64.len(),
         };
@@ -292,7 +336,8 @@ impl EquationSystemBuilder<EqSysSolutionPlan> {
         let subprob = SubProblem::new(
             &self.raw_res_fns,
             &block,
-            &self.givens,
+            &self.givens_f64,
+            &self.givens_adfn,
             &initial_unknowns,
             l2_loss_gen,
             ResidNoOpGaussNewton::new_subprob(&block),
@@ -304,10 +349,7 @@ impl EquationSystemBuilder<EqSysSolutionPlan> {
         Ok(best_params)
     }
 
-    pub fn solve_system(
-        &self,
-        initial_unknowns: &DynamicsDerivedParams<f64>,
-    ) -> Result<DynamicsDerivedParams<f64>, EqSysError> {
+    pub fn solve_system(&self, initial_unknowns: &U64) -> Result<U64, EqSysError> {
         let mut current_unknowns = initial_unknowns.clone();
 
         for (i, block) in self.state.solution_plan.blocks.iter().enumerate() {
@@ -316,9 +358,11 @@ impl EquationSystemBuilder<EqSysSolutionPlan> {
                 i
             );
 
-            self.state
-                .solution_plan
-                .print_solution_block(block, &self.raw_res_fns);
+            self.state.solution_plan.print_solution_block(
+                block,
+                &self.raw_res_fns,
+                self.unknown_field_names,
+            );
 
             let gn_soln = self.solve_sub_problem_gauss_newton(block, &current_unknowns);
 

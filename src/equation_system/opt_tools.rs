@@ -4,8 +4,8 @@ use argmin::core::{Error, IterState, KV, OptimizationResult, State, observers::O
 
 use crate::prelude::SubProblem;
 
-pub type OptRes<S, R, A, G, J = ()> =
-    OptimizationResult<SubProblem<R, A>, S, IterState<nalgebra::DVector<f64>, G, J, (), (), f64>>;
+pub type OptRes<S, G64, U64, Gadfn, Uadfn, R, A, const N: usize, GR = (), J = ()> =
+    OptimizationResult<SubProblem<G64, U64, Gadfn, Uadfn, R, A, N>, S, IterState<nalgebra::DVector<f64>, GR, J, (), (), f64>>;
 
 #[derive(Clone)]
 pub struct MyObserver {

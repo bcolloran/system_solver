@@ -1,5 +1,3 @@
-use ad_trait::AD;
-
 use crate::{
     air_accel_2d,
     constraints::{
@@ -8,6 +6,7 @@ use crate::{
     },
     prelude::*,
 };
+use system_solver::prelude::ad_trait::AD;
 
 /// Residual: in zero-g and under full input, acceleration should be zero at max air speed
 ///

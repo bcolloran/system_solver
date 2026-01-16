@@ -1,11 +1,19 @@
 use crate::prelude::{opt_tools::MyObserver, *};
+use ad_trait::forward_ad::adfn::adfn;
 use argmin::{
     core::{Executor, Jacobian},
     solver::{gaussnewton::GaussNewtonLS, linesearch::MoreThuenteLineSearch},
 };
 
-impl<R: ResidTransHOF> SubProblem<R, ResidNoOpGaussNewton> {
-    pub fn solve_gauss_newton(&self) -> Result<DynamicsDerivedParams<f64>, EqSysError> {
+impl<G64, U64, Gadfn, Uadfn, R, const N: usize> SubProblem<G64, U64, Gadfn, Uadfn, R, ResidNoOpGaussNewton, N>
+where
+    G64: GivenParamsFor<f64, N>,
+    U64: UnknownParamsFor<f64, N>,
+    Gadfn: GivenParamsFor<adfn<1>, N>,
+    Uadfn: UnknownParamsFor<adfn<1>, N>,
+    R: ResidTransHOF,
+{
+    pub fn solve_gauss_newton(&self) -> Result<U64, EqSysError> {
         self.print_pre_optimization_summary();
 
         // let linesearch: BacktrackingLineSearch<Vec<f64>, Vec<f64>, _, _> =

@@ -1,7 +1,5 @@
 use crate::prelude::*;
-
-use ad_trait::AD;
-use nalgebra::{ComplexField, UnitVector2, Vector2};
+use system_solver::prelude::{ad_trait::AD, nalgebra::{ComplexField, RealField, UnitVector2, Vector2}};
 
 fn normal_from_tan_angle<T: AD>(tangent_angle: T) -> UnitVector2<T> {
     UnitVector2::new_normalize(Vector2::new(
@@ -87,7 +85,7 @@ where
     pub fn abs_tangent_angle_degrees(&self) -> T {
         let t = self.tangent();
         const DEG_PER_RAD: f64 = 180.0 / std::f64::consts::PI;
-        (nalgebra::RealField::atan2(t.y, t.x) * T::constant(DEG_PER_RAD)).abs()
+        (RealField::atan2(t.y, t.x) * T::constant(DEG_PER_RAD)).abs()
     }
 
     /// Creates a new ground contact from geometric and physical parameters.

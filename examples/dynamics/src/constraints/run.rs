@@ -1,5 +1,3 @@
-use ad_trait::AD;
-
 use crate::{
     FrictionContact2D,
     constraints::{
@@ -10,6 +8,7 @@ use crate::{
     prelude::*,
     total_accel_2d,
 };
+use system_solver::prelude::ad_trait::AD;
 
 pub fn run_accel_at_max_speed_residual<T: AD>(
     givens: &DynamicsGivenParams<T>,
