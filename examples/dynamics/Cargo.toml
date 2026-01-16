@@ -6,9 +6,6 @@ edition = "2024"
 [lib]
 crate-type = ["lib"]
 
-[[bin]]
-name = "dynamics_example"
-path = "main.rs"
 
 [dependencies]
 system_solver = { path = "../.." }
