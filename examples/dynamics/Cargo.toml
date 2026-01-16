@@ -12,8 +12,8 @@ path = "main.rs"
 
 [dependencies]
 system_solver = { path = "../.." }
-struct_to_array = "0.1.1"
-field_names_and_counts = "0.1.0"
+struct_to_array = { workspace = true }
+field_names_and_counts = { workspace = true }
 
 
 [dev-dependencies]

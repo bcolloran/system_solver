@@ -2,6 +2,10 @@
 members = ["examples/dynamics"]
 resolver = "2"
 
+[workspace.dependencies]
+struct_to_array = "0.1.1"
+field_names_and_counts = "0.1.0"
+
 [package]
 name = "system_solver"
 version = "0.1.0"
@@ -12,9 +16,9 @@ crate-type = ["lib"]
 
 
 [dependencies]
-struct_to_array = "0.1.1"
+struct_to_array = { workspace = true }
 nalgebra_block_triangularization = "0.1.0"
-field_names_and_counts = "0.1.0"
+field_names_and_counts = { workspace = true }
 
 nalgebra = "0.34"
 ad_trait = { git = "https://github.com/bcolloran/ad_trait.git", branch = "main" }
